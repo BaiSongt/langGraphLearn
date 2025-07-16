@@ -10,7 +10,7 @@
 import uuid
 import sqlite3
 from .app import chatapp, memory # 从同一个文件夹下的 app.py 文件中导入 chatapp 和 memory
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage, AIMessage
 
 # --- Python 语法详解: `from .app import ...` ---
 # `.` 在 import 语句中代表“当前文件夹”。

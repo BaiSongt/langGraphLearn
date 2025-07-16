@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
+
 dependencies = [
     "langgraph",
     "langchain-core",
@@ -14,3 +15,6 @@ dependencies = [
     "langchain-tavily",
     "langgraph-checkpoint-sqlite",
 ]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]

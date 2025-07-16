@@ -3,6 +3,7 @@
 # - 阶段四：实践项目 | 11.1. 集成 LangSmith 调试 (phase4_11_1_project_langsmith_integration.md)
 
 import os
+from dotenv import load_dotenv
 import operator
 import uuid
 import sqlite3
@@ -17,13 +18,13 @@ from langgraph.checkpoint.sqlite import SqliteSaver
 # --- API Key & LangSmith Setup ---
 # 在真实项目中，请从操作系统环境变量中读取这些值。
 # 为了方便本次交互式学习，我们在此处直接设置。
-os.environ["DEEPSEEK_API_KEY"] = "sk-a37f15cbba404a3fa708d07c925fc38c"
+load_dotenv()
 
-# --- LangSmith 集成 ---
-# 要启用 LangSmith，只需设置以下环境变量。无需修改任何代码！
-# LangChain 和 LangGraph 会自动检测到这些变量并开始追踪。
-os.environ["LANGCHAIN_TRACING_V2"] = "true"
-os.environ["LANGCHAIN_API_KEY"] = "YOUR_LANGSMITH_API_KEY" # 请替换为你的真实 Key
+# 从环境变量中获取 API Key，如果未设置则抛出异常
+if not os.getenv("DEEPSEEK_API_KEY"):
+    raise ValueError("DEEPSEEK_API_KEY not set")
+if not os.getenv("LANGCHAIN_API_KEY"):
+    raise ValueError("LANGCHAIN_API_KEY not set")
 os.environ["LANGCHAIN_PROJECT"] = "LangGraph Learning" # (可选) 指定项目名称
 
 # 1. 定义工具

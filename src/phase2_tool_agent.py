@@ -3,6 +3,7 @@
 # - 阶段二：实践项目 | 6.1. 构建 Ollama 工具调用 Agent (phase2_6_1_project_ollama_agent.md)
 
 import os
+from dotenv import load_dotenv
 import operator
 from typing import TypedDict, Annotated, List
 from langchain_core.messages import AnyMessage, HumanMessage, ToolMessage
@@ -16,9 +17,15 @@ from langgraph.prebuilt import ToolNode
 # --- API Key Setup ---
 # 在真实项目中，请从环境变量中读取这些值。
 # 为了方便本次交互式学习，我们在此处直接设置。
-os.environ["TAVILY_API_KEY"] = "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"
-os.environ["DEEPSEEK_API_KEY"] = "sk-a37f15cbba404a3fa708d07c925fc38c"
-os.environ["GEMINI_API_KEY"] = "AIzaSyDD2mPMXWr6nxG5HqccrbsdHC_UA1qV_sk"
+load_dotenv()
+
+# 从环境变量中获取 API Key，如果未设置则抛出异常
+if not os.getenv("TAVILY_API_KEY"):
+    raise ValueError("TAVILY_API_KEY not set")
+if not os.getenv("DEEPSEEK_API_KEY"):
+    raise ValueError("DEEPSEEK_API_KEY not set")
+if not os.getenv("GEMINI_API_KEY"):
+    raise ValueError("GEMINI_API_KEY not set")
 
 # --- 模型选择 ---
 # 在这里切换你想要使用的模型: 'deepseek' 或 'gemini'

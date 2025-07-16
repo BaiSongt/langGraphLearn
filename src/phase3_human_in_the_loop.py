@@ -4,6 +4,7 @@
 # - 阶段三：实践项目 | 9.1. 构建带用户确认的 Agent (phase3_9_1_project_agent_with_confirmation.md)
 
 import os
+from dotenv import load_dotenv
 import operator
 import uuid
 from typing import TypedDict, Annotated, List
@@ -15,8 +16,11 @@ from langgraph.prebuilt import ToolNode
 from langgraph.checkpoint.sqlite import SqliteSaver
 
 # --- API Key Setup ---
-# 请确保您已在操作系统环境中设置了 DEEPSEEK_API_KEY
-os.environ["DEEPSEEK_API_KEY"] = "sk-a37f15cbba404a3fa708d07c925fc38c"
+load_dotenv()
+
+# 从环境变量中获取 API Key，如果未设置则抛出异常
+if not os.getenv("DEEPSEEK_API_KEY"):
+    raise ValueError("DEEPSEEK_API_KEY not set")
 
 # 1. 定义一个“危险”的工具：写入文件
 @tool

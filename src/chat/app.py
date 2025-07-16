@@ -9,6 +9,7 @@
 # --- 核心库导入 ---
 # Python 标准库
 import os
+from dotenv import load_dotenv
 import operator
 import sqlite3
 from typing import TypedDict, Annotated, List
@@ -33,8 +34,13 @@ from langgraph.checkpoint.sqlite import SqliteSaver
 # `os.getenv("KEY_NAME")` 会安全地读取环境变量。如果不存在，它会返回 None。
 # 为了方便运行，如果环境变量不存在，我们在此处提供一个备用的假 Key，但这会导致程序在调用 API 时失败。
 # 请确保您已经在您的环境中正确设置了这些环境变量。
-os.environ["DEEPSEEK_API_KEY"] = os.getenv("DEEPSEEK_API_KEY", "sk-a37f15cbba404a3fa708d07c925fc38c")
-os.environ["TAVILY_API_KEY"] = os.getenv("TAVILY_API_KEY", "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")
+load_dotenv()
+
+# 从环境变量中获取 API Key，如果未设置则抛出异常
+if not os.getenv("DEEPSEEK_API_KEY"):
+    raise ValueError("DEEPSEEK_API_KEY not set")
+if not os.getenv("TAVILY_API_KEY"):
+    raise ValueError("TAVILY_API_KEY not set")
 
 
 # --- 步骤 2: 定义 Agent 可以使用的工具 (Tools) ---
@@ -116,39 +122,49 @@ def router(state: AgentState) -> str:
         return "__end__" # 返回特殊字符串 `__end__`，告诉图这个流程分支结束了。
 
 
-# --- 步骤 5: 构建并编译图 (Graph) ---
-# 现在，我们将上面定义的所有组件组装成一个可执行的图。
+def get_compiled_app():
+    """构建并返回带持久化的已编译 LangGraph 应用。"""
+    # 初始化 LLM 并绑定工具
+    llm = ChatDeepSeek(model="deepseek-chat", temperature=0)
+    llm_with_tools = llm.bind_tools(tools)
 
-# 初始化 LLM 并绑定工具
-llm = ChatDeepSeek(model="deepseek-chat", temperature=0)
-llm_with_tools = llm.bind_tools(tools)
+    # 节点 1: Agent 节点 (大脑)
+    def agent_node(state: AgentState):
+        """调用 LLM 来决定下一步行动。"""
+        print("---AGENT: 思考中...---")
+        response = llm_with_tools.invoke(state['messages'])
+        return {"messages": [response]}
 
-# 初始化图状态
-workflow = StateGraph(AgentState)
+    # 初始化图状态
+    workflow = StateGraph(AgentState)
 
-# 添加节点到图中
-workflow.add_node("agent", agent_node)
-workflow.add_node("tools", tool_node)
+    # 添加节点到图中
+    workflow.add_node("agent", agent_node)
+    workflow.add_node("tools", tool_node)
 
-# 设置图的入口点
-workflow.set_entry_point("agent")
+    # 设置图的入口点
+    workflow.set_entry_point("agent")
 
-# 添加条件边
-workflow.add_conditional_edges("agent", router)
+    # 添加条件边
+    workflow.add_conditional_edges("agent", router)
 
-# 添加常规边，创建循环
-# 这条边是 Agentic Loop 的关键：工具执行完毕后，流程返回给 Agent 节点，
-# 让 Agent 可以根据工具返回的结果进行下一步思考。
-workflow.add_edge("tools", "agent")
+    # 添加常规边，创建循环
+    workflow.add_edge("tools", "agent")
 
-# 设置持久化/记忆
-# `SqliteSaver` 会将每一次对话的状态都保存到一个 SQLite 数据库文件中。
-# `check_same_thread=False` 是在多线程应用中使用 SQLite 的一个必要设置。
-conn = sqlite3.connect("chat_history.sqlite", check_same_thread=False)
-memory = SqliteSaver(conn=conn)
+    # 设置持久化/记忆
+    conn = sqlite3.connect("chat_history.sqlite", check_same_thread=False)
+    memory = SqliteSaver(conn=conn)
 
-# 编译图，并为其配备记忆功能
-# `interrupt_before=["tools"]` 是一个可选的调试功能，我们暂时不启用它。
-chatapp = workflow.compile(checkpointer=memory)
+    return workflow.compile(checkpointer=memory)
 
-print("AI 聊天应用已成功初始化！")
+if __name__ == "__main__":
+    # 这部分代码只在直接运行此脚本时执行
+    chatapp = get_compiled_app()
+    print("AI 聊天应用已成功初始化！")
+
+    # 这里可以添加一些用于直接测试运行的代码
+    # 例如，启动一个简单的命令行交互界面
+    config = {"configurable": {"thread_id": "test-thread"}}
+    for chunk in chatapp.stream(None, config=config):
+        print(chunk)
+
