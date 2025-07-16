@@ -1,0 +1,16 @@
+[project]
+name = "langgraphlearn"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "langgraph",
+    "langchain-core",
+    "langchain-community",
+    "langchain-ollama",
+    "langchain-deepseek",
+    "langchain-google-genai",
+    "langchain-tavily",
+    "langgraph-checkpoint-sqlite",
+]
